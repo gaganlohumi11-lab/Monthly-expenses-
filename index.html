@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#176b55">
+<title>Monthly expenses</title>
+<style>
+:root{--green:#176b55;--bg:#f4f7f5;--card:#fff;--ink:#17231e;--muted:#68756f;--line:#e3eae6;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans Devanagari",sans-serif}
+header{background:linear-gradient(135deg,#176b55,#22916e);color:white;padding:22px 18px 26px;border-radius:0 0 24px 24px}
+.wrap{max-width:760px;margin:auto;padding:0 14px}header h1{font-size:24px;margin:0 0 4px}header p{margin:0;opacity:.9;font-size:14px}
+main{padding:16px 0 40px}.monthrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.monthrow h2{font-size:18px;margin:0}
+input,select,button{font:inherit}input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;background:white;color:var(--ink);min-width:0}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 2px 8px #15291c08}
+.card small{display:block;color:var(--muted);font-size:12px}.amount{font-size:23px;font-weight:750;margin-top:5px}.green{color:var(--green)}.red{color:var(--red)}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:15px;margin:12px 0}.panel h3{font-size:16px;margin:0 0 12px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}label{font-size:12px;color:var(--muted);display:block;margin:0 0 5px}
+button{border:0;border-radius:11px;padding:12px 14px;background:var(--green);color:white;font-weight:650;cursor:pointer}
+button.secondary{background:#edf4f0;color:var(--green)}button.danger{background:#fff0ef;color:var(--red);padding:8px 10px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;padding:10px 5px;border-bottom:1px solid var(--line)}th{font-size:12px;color:var(--muted);font-weight:600}
+.right{text-align:right}.empty{text-align:center;color:var(--muted);padding:20px 5px}.category{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:8px 0 20px}
+@media(max-width:420px){.amount{font-size:20px}.formgrid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>Monthly expenses</h1><p>घर के हर खर्च का आसान रिकॉर्ड</p></div></header>
+<main class="wrap">
+ <div class="monthrow"><h2>महीने का हिसाब</h2><input id="month" type="month" style="max-width:180px"></div>
+ <section class="cards">
+  <div class="card"><small>महीने की आमदनी</small><div class="amount" id="incomeView">₹0</div></div>
+  <div class="card"><small>कुल खर्च</small><div class="amount red" id="spentView">₹0</div></div>
+  <div class="card"><small>बचा हुआ पैसा</small><div class="amount green" id="balanceView">₹0</div></div>
+  <div class="card"><small>कुल एंट्री</small><div class="amount" id="countView">0</div></div>
+ </section>
+ <section class="panel">
+  <h3>महीने की आमदनी सेट करें</h3>
+  <div class="formgrid"><div class="full"><label for="income">आमदनी (₹)</label><input id="income" type="number" min="0" placeholder="जैसे 25000"></div></div>
+  <div class="actions"><button id="saveIncome">आमदनी सेव करें</button></div>
+ </section>
+ <section class="panel">
+  <h3>नया खर्च जोड़ें</h3>
+  <form id="expenseForm" class="formgrid">
+   <div><label for="category">खर्च की कैटेगरी</label><select id="category">
+    <option>कमरे का किराया</option><option>राशन</option><option>सब्जी</option><option>दूध</option><option>बिजली</option><option>पानी</option><option>यात्रा</option><option>मोबाइल / इंटरनेट</option><option>दवाई</option><option>अन्य खर्च</option>
+   </select></div>
+   <div><label for="date">तारीख</label><input id="date" type="date" required></div>
+   <div><label for="amount">रकम (₹)</label><input id="amount" type="number" min="1" step="0.01" placeholder="जैसे 350" required></div>
+   <div><label for="note">विवरण</label><input id="note" maxlength="80" placeholder="जैसे दूध, आटा, चावल"></div>
+   <div class="full"><button type="submit" style="width:100%">＋ खर्च जोड़ें</button></div>
+  </form>
+ </section>
+ <section class="panel"><h3>कैटेगरी के अनुसार खर्च</h3><div id="categoryTotals"></div></section>
+ <section class="panel">
+  <h3>खर्च का रिकॉर्ड</h3>
+  <div style="overflow-x:auto"><table><thead><tr><th>तारीख / विवरण</th><th>कैटेगरी</th><th class="right">रकम</th><th></th></tr></thead><tbody id="entries"></tbody></table></div>
+  <div class="actions"><button class="secondary" id="export">CSV डाउनलोड</button><button class="secondary" id="backup">बैकअप डाउनलोड</button></div>
+ </section>
+ <footer>आपका डेटा इसी ब्राउज़र में सेव रहता है। समय-समय पर बैकअप डाउनलोड कर लें।</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const categories=["कमरे का किराया","राशन","सब्जी","दूध","बिजली","पानी","यात्रा","मोबाइल / इंटरनेट","दवाई","अन्य खर्च"];
+const now=new Date(), monthKey=d=>d.toISOString().slice(0,7), key=()=>`monthly-ledger-v1`;
+let db={months:{},entries:[]};
+try{db=JSON.parse(localStorage.getItem(key()))||db}catch(e){}
+if(!Array.isArray(db.entries))db.entries=[];
+if(!db.months)db.months={};
+$("month").value=monthKey(now);$("date").value=now.toISOString().slice(0,10);
+const current=()=> $("month").value || monthKey(now);
+const money=n=>"₹"+Number(n||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+const save=()=>localStorage.setItem(key(),JSON.stringify(db));
+const monthEntries=()=>db.entries.filter(e=>e.date.slice(0,7)===current());
+function render(){
+ const es=monthEntries(),spent=es.reduce((s,e)=>s+e.amount,0),income=Number(db.months[current()]||0);
+ $("income").value=income||"";
+ $("incomeView").textContent=money(income);$("spentView").textContent=money(spent);
+ $("balanceView").textContent=money(income-spent);$("countView").textContent=es.length;
+ $("categoryTotals").innerHTML=categories.map(c=>{let n=es.filter(e=>e.category===c).reduce((s,e)=>s+e.amount,0);return `<div class="category"><span>${c}</span><b>${money(n)}</b></div>`}).join("");
+ const body=$("entries");body.innerHTML="";
+ if(!es.length){body.innerHTML='<tr><td colspan="4" class="empty">इस महीने अभी कोई खर्च दर्ज नहीं है।</td></tr>';return}
+ [...es].sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id).forEach(e=>{
+  const tr=document.createElement("tr");
+  const td1=document.createElement("td");td1.textContent=e.date+(e.note?" · "+e.note:"");
+  const td2=document.createElement("td");td2.textContent=e.category;
+  const td3=document.createElement("td");td3.className="right";td3.textContent=money(e.amount);
+  const td4=document.createElement("td");const btn=document.createElement("button");btn.className="danger";btn.textContent="हटाएँ";btn.onclick=()=>{if(confirm("यह खर्च हटाना है?")){db.entries=db.entries.filter(x=>x.id!==e.id);save();render()}};td4.append(btn);
+  tr.append(td1,td2,td3,td4);body.append(tr);
+ });
+}
+$("saveIncome").onclick=()=>{let n=Number($("income").value);if(!Number.isFinite(n)||n<0){alert("सही आमदनी दर्ज करें");return}db.months[current()]=n;save();render()};
+$("month").onchange=render;
+$("expenseForm").onsubmit=e=>{e.preventDefault();let amount=Number($("amount").value);if(!amount||amount<=0){alert("सही रकम दर्ज करें");return}
+ db.entries.push({id:Date.now()+Math.random(),date:$("date").value,category:$("category").value,amount,note:$("note").value.trim()});save();$("amount").value="";$("note").value="";render()};
+function download(name,content,type){let a=document.createElement("a"),url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+$("export").onclick=()=>{let rows=[["तारीख","कैटेगरी","रकम","विवरण"],...monthEntries().map(e=>[e.date,e.category,e.amount,e.note])];let csv="\ufeff"+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n");download(`kharcha-${current()}.csv`,csv,"text/csv;charset=utf-8")};
+$("backup").onclick=()=>download("mera-masik-hisab-backup.json",JSON.stringify(db,null,2),"application/json");
+render();
+</script>
+</body></html>
