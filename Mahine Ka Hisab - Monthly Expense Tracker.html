@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#059669">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Mahine Ka Hisab">
+    <meta name="application-name" content="Mahine Ka Hisab">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23059669'/><text x='50' y='68' font-size='55' text-anchor='middle' fill='white'>₹</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23059669'/><text x='50' y='68' font-size='55' text-anchor='middle' fill='white'>₹</text></svg>">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link id="pwaManifest" rel="manifest" href="">
+    <title>Mahine Ka Hisab - Monthly Expense Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Noto Sans Devanagari -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans Devanagari', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Custom scrollbar for smooth look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: white;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased pb-16">
+
+    <!-- Top Navigation / Header -->
+    <header class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+                    <i class="fa-solid fa-wallet text-2xl"></i>
+                </div>
+            <!-- Month-Year Selector & Save App Button -->
+            <div class="flex items-center gap-2">
+                <button onclick="openInstallModal()" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold text-xs px-3 py-2 rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer animate-pulse" title="Mobile screen par lagayein">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                    <span>Screen Par Lagayein</span>
+                </button>
+                <div class="flex items-center gap-2 bg-white/15 px-3 py-2 rounded-xl backdrop-blur-sm border border-white/20">
+                    <i class="fa-regular fa-calendar text-emerald-100"></i>
+                    <label for="monthFilter" class="text-xs font-medium text-emerald-50 hidden sm:inline">Mahina:</label>
+                    <input type="month" id="monthFilter" class="bg-transparent text-white font-semibold text-sm focus:outline-none cursor-pointer [color-scheme:dark]">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl mx-auto px-4 pt-6 space-y-6">
+
+        <!-- Toast Notification Box (Replaces alert) -->
+        <div id="toastBox" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+            <div id="toastContent" class="bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-medium">
+                <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+                <span id="toastMessage">Saved!</span>
+            </div>
+        </div>
+
+        <!-- Summary Cards Dashboard -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Total Expense Card -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Kul Kharcha (Total Spent)</p>
+                        <h2 id="totalExpenseDisplay" class="text-3xl font-bold text-slate-800 mt-1">₹0</h2>
+                    </div>
+                    <div class="bg-rose-50 text-rose-600 p-3 rounded-xl">
+                        <i class="fa-solid fa-indian-rupee-sign text-xl"></i>
+                    </div>
+                </div>
+                <p id="selectedMonthLabel" class="text-xs text-slate-500 mt-4 font-medium">Is mahine ka total</p>
+            </div>
+
+            <!-- Monthly Budget Card -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Mahine Ka Budget</p>
+                            <button onclick="openBudgetModal()" class="no-print text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded-md transition" title="Budget Badlein">
+                                <i class="fa-solid fa-pen text-[10px]"></i> Edit
+                            </button>
+                        </div>
+                        <h2 id="budgetDisplay" class="text-3xl font-bold text-slate-800 mt-1">₹15,000</h2>
+                    </div>
+                    <div class="bg-blue-50 text-blue-600 p-3 rounded-xl">
+                        <i class="fa-solid fa-piggy-bank text-xl"></i>
+                    </div>
+                </div>
+                <!-- Budget Progress Bar -->
+                <div class="mt-4">
+                    <div class="flex justify-between text-xs mb-1 font-medium">
+                        <span id="budgetStatusText" class="text-slate-500">0% kharch hua</span>
+                        <span id="remainingBudgetText" class="text-emerald-600">Bacha: ₹15,000</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div id="budgetProgressBar" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Highest Category Card -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Sabse Zyada Kharcha</p>
+                        <h2 id="topCategoryName" class="text-xl font-bold text-slate-800 mt-1">Koi nahi</h2>
+                        <p id="topCategoryAmount" class="text-sm font-semibold text-amber-600 mt-0.5">₹0</p>
+                    </div>
+                    <div class="bg-amber-50 text-amber-600 p-3 rounded-xl">
+                        <i class="fa-solid fa-chart-pie text-xl"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-400 mt-3">Category ke hisab se</p>
+            </div>
+        </section>
+
+        <!-- Main Content Grid: Add Expense Form + Category Breakdown -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Column: Add / Edit Expense Form (5 cols) -->
+            <section class="lg:col-span-5 no-print">
+                <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-100 sticky top-24">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 id="formTitle" class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <span class="w-2 h-6 bg-emerald-500 rounded-full"></span>
+                            Naya Kharcha Likhein
+                        </h3>
+                        <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden text-xs text-rose-600 hover:underline font-medium">
+                            Cancel Edit
+                        </button>
+                    </div>
+
+                    <form id="expenseForm" class="space-y-4">
+                        <input type="hidden" id="editExpenseId" value="">
+
+                        <!-- Amount Input -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Rakam / Amount (₹) *</label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">₹</span>
+                                <input type="number" id="amountInput" step="0.01" min="1" required placeholder="Jaise: 500"
+                                    class="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-lg font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+                            </div>
+                        </div>
+
+                        <!-- Category Selection Grid -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Category Chunein *</label>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2" id="categorySelector">
+                                <!-- Category Radio Buttons injected via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Description / Note -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Vivaran / Note (Kya kharida?)</label>
+                            <input type="text" id="noteInput" placeholder="Jaise: Aata 10kg, Doodh, Bukhar ki dawai..."
+                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+                        </div>
+
+                        <!-- Date Input -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Tareekh (Date) *</label>
+                            <input type="date" id="dateInput" required
+                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" id="submitBtn"
+                            class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-semibold py-3 px-4 rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Kharcha Save Karein</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Right Column: Category Summary & Expense List (7 cols) -->
+            <section class="lg:col-span-7 space-y-6">
+                
+                <!-- Category-wise Breakdown Card -->
+                <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-emerald-600"></i>
+                            Category Hisab (Breakdown)
+                        </h3>
+                        <span class="text-xs text-slate-400">Mahine ka anupat</span>
+                    </div>
+                    
+                    <div id="categoryBreakdownList" class="space-y-3.5">
+                        <!-- Category progress bars generated via JS -->
+                    </div>
+                </div>
+
+                <!-- Expense History List Card -->
+                <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-100">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-receipt text-emerald-600"></i>
+                            Kharchon Ki List (<span id="entryCount">0</span>)
+                        </h3>
+
+                        <!-- Action Buttons: CSV Download & Print -->
+                        <div class="flex items-center gap-2 no-print">
+                            <button onclick="exportToCSV()" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1.5" title="Excel/CSV me download karein">
+                                <i class="fa-solid fa-file-excel"></i>
+                                <span>Excel / CSV</span>
+                            </button>
+                            <button onclick="window.print()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1.5" title="Print ya PDF save karein">
+                                <i class="fa-solid fa-print"></i>
+                                <span class="hidden sm:inline">Print</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search & Category Filter Bar -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4 no-print">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="searchInput" placeholder="Note ya rakam khojein..."
+                                class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+                        <select id="filterCategorySelect"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <option value="all">Sabhi Categories (All)</option>
+                            <option value="rent">🏠 Room Rent (Kiraya)</option>
+                            <option value="rashan">🛒 Rashan (Groceries)</option>
+                            <option value="sabji_doodh">🥛 Sabji & Doodh</option>
+                            <option value="dawai">💊 Dawai (Medicine)</option>
+                            <option value="anya">📦 Anya Kharche (Other)</option>
+                        </select>
+                    </div>
+
+                    <!-- Expense Items Container -->
+                    <div id="expenseListContainer" class="divide-y divide-slate-100 max-h-[520px] overflow-y-auto pr-1">
+                        <!-- Expense rows injected via JS -->
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <!-- Edit Budget Modal -->
+    <div id="budgetModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl transform transition-all">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Mahine Ka Budget Set Karein</h3>
+            <p class="text-xs text-slate-500 mb-4">Apna monthly kharch limit set karein taaki hisab control me rahe.</p>
+            
+            <div class="relative mb-5">
+                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                <input type="number" id="newBudgetInput" min="0" step="100" placeholder="15000"
+                    class="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeBudgetModal()" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition">Cancel</button>
+                <button type="button" onclick="saveNewBudget()" class="px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition">Save Budget</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal (Replaces confirm) -->
+    <div id="deleteModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4">
+                <i class="fa-solid fa-trash-can text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Kharcha Delete Karein?</h3>
+            <p class="text-xs text-slate-500 mb-5">Kya aap sach me is entry ko hatana chahte hain? Yeh wapas nahi aayegi.</p>
+            
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition">Nahi, Rehne Dein</button>
+                <button type="button" id="confirmDeleteBtn" class="px-4 py-2 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white transition">Haan, Delete Karein</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile App Download / Save Guide Modal -->
+    <div id="installModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white font-bold text-xl flex items-center justify-center shadow-md">
+                        ₹
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Phone Screen Par Lagayein</h3>
+                        <p class="text-[11px] text-slate-500">App icon ke saath Home Screen par set karein</p>
+                    </div>
+                </div>
+                <button onclick="closeInstallModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs text-slate-700 bg-emerald-50/70 p-4 rounded-xl border border-emerald-100 mb-4">
+                <p class="font-bold text-emerald-800 text-sm">Apne aap main aapke phone me install nahi kar sakta, isliye aap bas ye 2 step karein:</p>
+                <div class="flex items-start gap-2.5">
+                    <span class="bg-emerald-600 text-white font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5">1</span>
+                    <p>Neeche <strong>"App Link / File Kholein"</strong> dabayein (ya chat ke upar code box ke <strong>Download</strong> icon se file save karke <strong>Chrome</strong> me kholein).</p>
+                </div>
+                <div class="flex items-start gap-2.5">
+                    <span class="bg-emerald-600 text-white font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5">2</span>
+                    <p>Chrome ke upar kone me <strong>3 dots (⋮)</strong> dabayein aur <strong>"Add to Home screen"</strong> par click karein — aapki mobile screen par <strong>"Mahine Ka Hisab"</strong> ka icon lag jayega!</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <button type="button" id="nativeInstallBtn" onclick="triggerNativeInstall()" class="hidden w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-mobile-screen"></i>
+                    <span>Seedhe App Install Karein (1-Click)</span>
+                </button>
+                <button type="button" onclick="openInNewTabForInstall()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-up-right-from-square"></i>
+                    <span>Naye Tab Me Kholein (Install Ke Liye)</span>
+                </button>
+                <button type="button" onclick="downloadAppFile()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-2.5 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-download"></i>
+                    <span>HTML File Download Karein</span>
+                </button>
+                <button type="button" onclick="copyFullAppCode()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>App Code Copy Karein</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Categories Configuration ---
+        const CATEGORIES = {
+            rent: {
+                id: 'rent',
+                label: 'Room Rent',
+                sub: 'Kiraya / Bijli',
+                icon: 'fa-house-chimney',
+                color: 'text-indigo-600',
+                bg: 'bg-indigo-50',
+                border: 'border-indigo-200',
+                bar: 'bg-indigo-500'
+            },
+            rashan: {
+                id: 'rashan',
+                label: 'Rashan',
+                sub: 'Aata, Dal, Tel',
+                icon: 'fa-basket-shopping',
+                color: 'text-amber-600',
+                bg: 'bg-amber-50',
+                border: 'border-amber-200',
+                bar: 'bg-amber-500'
+            },
+            sabji_doodh: {
+                id: 'sabji_doodh',
+                label: 'Sabji & Doodh',
+                sub: 'Rozana ka saman',
+                icon: 'fa-carrot',
+                color: 'text-emerald-600',
+                bg: 'bg-emerald-50',
+                border: 'border-emerald-200',
+                bar: 'bg-emerald-500'
+            },
+            dawai: {
+                id: 'dawai',
+                label: 'Dawai',
+                sub: 'Medicine / Doctor',
+                icon: 'fa-pills',
+                color: 'text-rose-600',
+                bg: 'bg-rose-50',
+                border: 'border-rose-200',
+                bar: 'bg-rose-500'
+            },
+            anya: {
+                id: 'anya',
+                label: 'Anya Kharche',
+                sub: 'Travel, Recharge, etc',
+                icon: 'fa-box-open',
+                color: 'text-slate-600',
+                bg: 'bg-slate-100',
+                border: 'border-slate-200',
+                bar: 'bg-slate-500'
+            }
+        };
+
+        // --- 2. State Management & LocalStorage ---
+        const STORAGE_KEY_EXPENSES = 'mahine_ka_hisab_expenses_v1';
+        const STORAGE_KEY_BUDGET = 'mahine_ka_hisab_budget_v1';
+
+        let expenses = [];
+        let monthlyBudget = 15000;
+        let selectedCategory = 'rashan';
+        let deleteTargetId = null;
+
+        // Initialize App on Load
+        document.addEventListener('DOMContentLoaded', () => {
+            setupPWAManifest();
+            loadData();
+            setupDefaultDates();
+            renderCategoryButtons();
+            setupEventListeners();
+            refreshUI();
+        });
+
+        // Setup Full-Screen Standalone App Manifest (so it opens like a real mobile app without browser bar)
+        let deferredInstallPrompt = null;
+        function setupPWAManifest() {
+            try {
+                const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#059669"/><text x="256" y="345" font-size="280" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="white">₹</text></svg>`;
+                const iconUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg);
+                const manifestObj = {
+                    name: 'Mahine Ka Hisab',
+                    short_name: 'Hisab Kitab',
+                    start_url: window.location.href,
+                    display: 'standalone',
+                    background_color: '#f3f4f6',
+                    theme_color: '#059669',
+                    icons: [
+                        { src: iconUrl, sizes: '192x192', type: 'image/svg+xml' },
+                        { src: iconUrl, sizes: '512x512', type: 'image/svg+xml' }
+                    ]
+                };
+                const blob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+                document.getElementById('pwaManifest').setAttribute('href', URL.createObjectURL(blob));
+
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    deferredInstallPrompt = e;
+                    const nativeBtn = document.getElementById('nativeInstallBtn');
+                    if (nativeBtn) nativeBtn.classList.remove('hidden');
+                });
+            } catch (err) {
+                console.error('Manifest setup skipped:', err);
+            }
+        }
+
+        async function triggerNativeInstall() {
+            if (!deferredInstallPrompt) return;
+            deferredInstallPrompt.prompt();
+            const { outcome } = await deferredInstallPrompt.userChoice;
+            if (outcome === 'accepted') {
+                showToast('App aapke phone me install ho gaya hai!');
+                closeInstallModal();
+            }
+            deferredInstallPrompt = null;
+        }
+
+                const savedBudget = localStorage.getItem(STORAGE_KEY_BUDGET);
+                if (savedBudget) {
+                    monthlyBudget = parseFloat(savedBudget) || 15000;
+                }
+            } catch (err) {
+                console.error('Data load error:', err);
+                expenses = [];
+            }
+        }
+
+        function saveExpenses() {
+            try {
+                localStorage.setItem(STORAGE_KEY_EXPENSES, JSON.stringify(expenses));
+            } catch (err) {
+                showToast('Storage full ho gayi hai!', true);
+            }
+        }
+
+        // Set current month in filter & today's date in form
+        function setupDefaultDates() {
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+
+            document.getElementById('monthFilter').value = `${yyyy}-${mm}`;
+            document.getElementById('dateInput').value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // --- 3. Render Category Radio Cards in Form ---
+        function renderCategoryButtons() {
+            const container = document.getElementById('categorySelector');
+            container.innerHTML = Object.values(CATEGORIES).map(cat => {
+                const isSelected = selectedCategory === cat.id;
+                return `
+                    <button type="button" onclick="selectCategory('${cat.id}')"
+                        class="flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                            isSelected 
+                            ? 'border-emerald-500 bg-emerald-50/70 ring-1 ring-emerald-500' 
+                            : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100'
+                        }">
+                        <div class="w-8 h-8 rounded-lg ${cat.bg} ${cat.color} flex items-center justify-center shrink-0">
+                            <i class="fa-solid ${cat.icon} text-sm"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold text-slate-800 truncate">${cat.label}</p>
+                            <p class="text-[10px] text-slate-500 truncate">${cat.sub}</p>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectCategory(catId) {
+            selectedCategory = catId;
+            renderCategoryButtons();
+        }
+
+        // --- 4. Form Submit (Add or Edit Expense) ---
+        function setupEventListeners() {
+            document.getElementById('expenseForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const amount = parseFloat(document.getElementById('amountInput').value);
+                const note = document.getElementById('noteInput').value.trim();
+                const date = document.getElementById('dateInput').value;
+                const editId = document.getElementById('editExpenseId').value;
+
+                if (!amount || amount <= 0 || !date) {
+                    showToast('Kripya sahi rakam aur tareekh bharein', true);
+                    return;
+                }
+
+                if (editId) {
+                    // Update existing entry
+                    const index = expenses.findIndex(item => item.id === editId);
+                    if (index !== -1) {
+                        expenses[index] = {
+                            ...expenses[index],
+                            amount,
+                            category: selectedCategory,
+                            note: note || CATEGORIES[selectedCategory].label,
+                            date
+                        };
+                        showToast('Kharcha update ho gaya!');
+                    }
+                } else {
+                    // Add new entry
+                    const newEntry = {
+                        id: 'exp-' + Date.now(),
+                        amount,
+                        category: selectedCategory,
+                        note: note || CATEGORIES[selectedCategory].label,
+                        date
+                    };
+                    expenses.unshift(newEntry);
+                    showToast('Naya kharcha save ho gaya!');
+                }
+
+                // Switch month filter to the added expense's month so user immediately sees it
+                document.getElementById('monthFilter').value = date.slice(0, 7);
+
+                saveExpenses();
+                resetForm();
+                refreshUI();
+            });
+
+            // Filter & Search listeners
+            document.getElementById('monthFilter').addEventListener('change', refreshUI);
+            document.getElementById('searchInput').addEventListener('input', refreshUI);
+            document.getElementById('filterCategorySelect').addEventListener('change', refreshUI);
+
+            // Confirm delete modal button
+            document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+                if (deleteTargetId) {
+                    expenses = expenses.filter(item => item.id !== deleteTargetId);
+                    saveExpenses();
+                    refreshUI();
+                    showToast('Entry delete kar di gayi');
+                }
+                closeDeleteModal();
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('editExpenseId').value = '';
+            document.getElementById('amountInput').value = '';
+            document.getElementById('noteInput').value = '';
+            
+            // Keep date aligned with selected month or today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = today;
+
+            document.getElementById('formTitle').innerHTML = `
+                <span class="w-2 h-6 bg-emerald-500 rounded-full"></span>
+                Naya Kharcha Likhein
+            `;
+            document.getElementById('submitBtn').innerHTML = `
+                <i class="fa-solid fa-plus"></i>
+                <span>Kharcha Save Karein</span>
+            `;
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+        }
+
+        function editExpense(id) {
+            const item = expenses.find(exp => exp.id === id);
+            if (!item) return;
+
+            document.getElementById('editExpenseId').value = item.id;
+            document.getElementById('amountInput').value = item.amount;
+            document.getElementById('noteInput').value = item.note;
+            document.getElementById('dateInput').value = item.date;
+            selectCategory(item.category);
+
+            document.getElementById('formTitle').innerHTML = `
+                <span class="w-2 h-6 bg-amber-500 rounded-full"></span>
+                Kharcha Edit Karein
+            `;
+            document.getElementById('submitBtn').innerHTML = `
+                <i class="fa-solid fa-check"></i>
+                <span>Update Karein</span>
+            `;
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+
+            // Smooth scroll to form on mobile
+            document.getElementById('expenseForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // --- 5. Refresh Dashboard, Breakdown & List ---
+        function refreshUI() {
+            const selectedMonth = document.getElementById('monthFilter').value; // YYYY-MM
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+            const categoryFilter = document.getElementById('filterCategorySelect').value;
+
+            // Format readable month label (e.g., November 2026)
+            if (selectedMonth) {
+                const [y, m] = selectedMonth.split('-');
+                const dateObj = new Date(y, parseInt(m) - 1, 1);
+                const monthName = dateObj.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+                document.getElementById('selectedMonthLabel').textContent = `${monthName} ka total kharch`;
+            }
+
+            // Filter expenses for the selected month
+            const monthExpenses = expenses.filter(item => item.date.startsWith(selectedMonth));
+
+            // Calculate totals per category & grand total
+            let totalSpent = 0;
+            const categoryTotals = { rent: 0, rashan: 0, sabji_doodh: 0, dawai: 0, anya: 0 };
+
+            monthExpenses.forEach(item => {
+                totalSpent += item.amount;
+                if (categoryTotals.hasOwnProperty(item.category)) {
+                    categoryTotals[item.category] += item.amount;
+                } else {
+                    categoryTotals.anya += item.amount;
+                }
+            });
+
+            // Update Total Expense Card
+            document.getElementById('totalExpenseDisplay').textContent = formatRupees(totalSpent);
+
+            // Update Budget Card
+            document.getElementById('budgetDisplay').textContent = formatRupees(monthlyBudget);
+            const remaining = monthlyBudget - totalSpent;
+            const percentUsed = monthlyBudget > 0 ? Math.min(Math.round((totalSpent / monthlyBudget) * 100), 100) : 0;
+
+            document.getElementById('budgetStatusText').textContent = `${percentUsed}% budget use hua`;
+            const remainingEl = document.getElementById('remainingBudgetText');
+            const progressBar = document.getElementById('budgetProgressBar');
+
+            if (remaining >= 0) {
+                remainingEl.textContent = `Bacha: ${formatRupees(remaining)}`;
+                remainingEl.className = 'text-emerald-600 font-semibold';
+                progressBar.className = percentUsed > 80 ? 'bg-amber-500 h-2 rounded-full transition-all duration-500' : 'bg-emerald-500 h-2 rounded-full transition-all duration-500';
+            } else {
+                remainingEl.textContent = `Zyada kharch: ${formatRupees(Math.abs(remaining))}`;
+                remainingEl.className = 'text-rose-600 font-semibold';
+                progressBar.className = 'bg-rose-500 h-2 rounded-full transition-all duration-500';
+            }
+            progressBar.style.width = `${percentUsed}%`;
+
+            // Find Highest Spending Category
+            let topCatId = null;
+            let maxCatAmount = 0;
+            Object.entries(categoryTotals).forEach(([catId, amt]) => {
+                if (amt > maxCatAmount) {
+                    maxCatAmount = amt;
+                    topCatId = catId;
+                }
+            });
+
+            if (topCatId && maxCatAmount > 0) {
+                document.getElementById('topCategoryName').textContent = CATEGORIES[topCatId].label;
+                document.getElementById('topCategoryAmount').textContent = `${formatRupees(maxCatAmount)} (${Math.round((maxCatAmount / totalSpent) * 100)}%)`;
+            } else {
+                document.getElementById('topCategoryName').textContent = 'Koi kharch nahi';
+                document.getElementById('topCategoryAmount').textContent = '₹0';
+            }
+
+            // Render Category Breakdown Bars
+            renderCategoryBreakdown(categoryTotals, totalSpent);
+
+            // Filter list by Search & Category Dropdown
+            const filteredList = monthExpenses
+                .filter(item => categoryFilter === 'all' || item.category === categoryFilter)
+                .filter(item => 
+                    item.note.toLowerCase().includes(searchQuery) || 
+                    item.amount.toString().includes(searchQuery) ||
+                    CATEGORIES[item.category]?.label.toLowerCase().includes(searchQuery)
+                )
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            renderExpenseList(filteredList);
+        }
+
+        function renderCategoryBreakdown(categoryTotals, totalSpent) {
+            const container = document.getElementById('categoryBreakdownList');
+            container.innerHTML = Object.values(CATEGORIES).map(cat => {
+                const amount = categoryTotals[cat.id] || 0;
+                const percentage = totalSpent > 0 ? Math.round((amount / totalSpent) * 100) : 0;
+
+                return `
+                    <div>
+                        <div class="flex justify-between items-center text-xs mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-md ${cat.bg} ${cat.color} flex items-center justify-center">
+                                    <i class="fa-solid ${cat.icon} text-[11px]"></i>
+                                </span>
+                                <span class="font-semibold text-slate-700">${cat.label}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-bold text-slate-800">${formatRupees(amount)}</span>
+                                <span class="text-slate-400 ml-1">(${percentage}%)</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div class="${cat.bar} h-1.5 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderExpenseList(list) {
+            const container = document.getElementById('expenseListContainer');
+            document.getElementById('entryCount').textContent = list.length;
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 px-4">
+                        <div class="w-14 h-14 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fa-solid fa-folder-open text-xl"></i>
+                        </div>
+                        <p class="text-sm font-semibold text-slate-600">Is mahine koi kharcha nahi mila</p>
+                        <p class="text-xs text-slate-400 mt-1">Upar diye gaye form se apna naya kharcha add karein.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = list.map(item => {
+                const cat = CATEGORIES[item.category] || CATEGORIES.anya;
+                const formattedDate = formatDisplayDate(item.date);
+
+                return `
+                    <div class="py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/80 px-2 rounded-xl transition group">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-xl ${cat.bg} ${cat.color} flex items-center justify-center shrink-0">
+                                <i class="fa-solid ${cat.icon}"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-slate-800 truncate">${escapeHTML(item.note)}</p>
+                                <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                                    <span class="font-medium ${cat.color}">${cat.label}</span>
+                                    <span>•</span>
+                                    <span>${formattedDate}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 shrink-0">
+                            <span class="text-base font-bold text-slate-800">${formatRupees(item.amount)}</span>
+                            
+                            <div class="flex items-center gap-1 no-print">
+                                <button onclick="editExpense('${item.id}')" class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Edit">
+                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                </button>
+                                <button onclick="promptDelete('${item.id}')" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Delete">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- 6. Budget & Delete Modals ---
+        function openBudgetModal() {
+            document.getElementById('newBudgetInput').value = monthlyBudget;
+            const modal = document.getElementById('budgetModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeBudgetModal() {
+            const modal = document.getElementById('budgetModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function saveNewBudget() {
+            const val = parseFloat(document.getElementById('newBudgetInput').value);
+            if (!isNaN(val) && val >= 0) {
+                monthlyBudget = val;
+                localStorage.setItem(STORAGE_KEY_BUDGET, monthlyBudget.toString());
+                refreshUI();
+                showToast('Mahine ka budget update ho gaya!');
+            }
+            closeBudgetModal();
+        }
+
+        function promptDelete(id) {
+            deleteTargetId = id;
+            const modal = document.getElementById('deleteModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeDeleteModal() {
+            deleteTargetId = null;
+            const modal = document.getElementById('deleteModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // --- Mobile App Install Modal & Self-Download ---
+        function openInstallModal() {
+            const modal = document.getElementById('installModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeInstallModal() {
+            const modal = document.getElementById('installModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function openInNewTabForInstall() {
+            try {
+                const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+                const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const win = window.open(url, '_blank');
+                if (!win) {
+                    downloadAppFile();
+                } else {
+                    showToast('Naye tab me khul gaya! Ab Chrome ke 3 dots (⋮) se "Add to Home screen" karein.');
+                }
+            } catch (err) {
+                downloadAppFile();
+            }
+        }
+
+        function downloadAppFile() {
+            try {
+                const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+                const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'Mahine_Ka_Hisab_App.html';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                showToast('Download shuru! Agar file na dikhe to "App Code Copy Karein" use karein.');
+            } catch (err) {
+                copyFullAppCode();
+            }
+        }
+
+        function copyFullAppCode() {
+            try {
+                const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = htmlContent;
+                tempTextArea.style.position = 'fixed';
+                tempTextArea.style.left = '-9999px';
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempTextArea);
+                showToast('Poora App Code copy ho gaya! Ab kisi bhi file/notes app me .html naam se save karein.');
+                closeInstallModal();
+            } catch (err) {
+                showToast('Upar editor ke Download button ka upyog karein.', true);
+            }
+        }
+
+        // --- 7. Export Monthly Record as CSV / Excel ---
+        function exportToCSV() {
+            const selectedMonth = document.getElementById('monthFilter').value;
+            const monthExpenses = expenses
+                .filter(item => item.date.startsWith(selectedMonth))
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (monthExpenses.length === 0) {
+                showToast('Download karne ke liye is mahine koi record nahi hai', true);
+                return;
+            }
+
+            let csvRows = ['Tareekh (Date),Category,Vivaran (Note),Rakam (INR)'];
+            let total = 0;
+
+            monthExpenses.forEach(item => {
+                const catName = CATEGORIES[item.category]?.label || 'Anya';
+                const cleanNote = `"${item.note.replace(/"/g, '""')}"`;
+                csvRows.push(`${item.date},${catName},${cleanNote},${item.amount}`);
+                total += item.amount;
+            });
+
+            csvRows.push(`,,Kul Kharcha (Total),${total}`);
+
+            const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvRows.join('\n'));
+            const link = document.createElement('a');
+            link.setAttribute('href', csvContent);
+            link.setAttribute('download', `Hisab_Kitab_${selectedMonth}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast('Excel/CSV file download ho gayi!');
+        }
+
+        // --- 8. Helper Utilities ---
+        function formatRupees(num) {
+            return '₹' + Number(num).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+        }
+
+        function formatDisplayDate(dateStr) {
+            const [y, m, d] = dateStr.split('-');
+            const date = new Date(y, parseInt(m) - 1, d);
+            return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag]));
+        }
+
+        let toastTimer;
+        function showToast(message, isError = false) {
+            const box = document.getElementById('toastBox');
+            const msgEl = document.getElementById('toastMessage');
+            const iconEl = document.getElementById('toastIcon');
+
+            msgEl.textContent = message;
+            iconEl.className = isError 
+                ? 'fa-solid fa-circle-exclamation text-rose-400 text-lg' 
+                : 'fa-solid fa-circle-check text-emerald-400 text-lg';
+
+            box.classList.remove('translate-y-20', 'opacity-0');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                box.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
